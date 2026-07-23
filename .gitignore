@@ -34,3 +34,7 @@ jscpd-report.*
 
 # Generated NuGet feed for sample acceptance tests
 sample-repos/.localfeed/
+
+# JS/TS sample artifacts
+sample-repos/**/vendor/
+sample-repos/**/package-lock.json
