@@ -19,17 +19,14 @@ describing the work as finished.
 
 ## Thresholds
 
-These are enforced by analyzers. They are not suggestions.
+The numbers are defined once, in [`core/THRESHOLDS.md`](core/THRESHOLDS.md), and
+enforced by the analyzers in each profile — not by review, and not restated
+here (so they can never drift). Method length, cyclomatic and cognitive
+complexity, parameter count, class/module length, duplication, and coverage all
+have a named rule or check in every profile. Read `core/THRESHOLDS.md` for the
+table and the per-language rule mapping.
 
-| Rule | Limit |
-|---|---|
-| Method / function length | 30 lines |
-| Cyclomatic complexity | 10 |
-| Cognitive complexity | 15 |
-| Parameters | 4 |
-| Class / module length | 300 to 400 lines |
-| Duplication | under 3 percent |
-| Test coverage | 80 percent |
+They are enforced, not suggestions.
 
 ## Duplication
 
