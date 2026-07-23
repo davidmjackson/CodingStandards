@@ -1,0 +1,33 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+dist/
+build/
+# ...but the NuGet meta-package ships an intentional build/ folder:
+!profiles/csharp/nuget/build/
+!profiles/csharp/nuget/build/**
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Tooling / coverage
+coverage/
+.coverage
+*.coverage
+coverage.cobertura.xml
+TestResults/
+.jscpd/
+jscpd-report.*
+.ruff_cache/
+
+# Editors / OS
+.DS_Store
+*.swp
+.idea/
+.vs/
