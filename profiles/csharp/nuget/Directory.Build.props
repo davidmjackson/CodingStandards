@@ -1,0 +1,9 @@
+<Project>
+  <!--
+    Intentional stub. MSBuild imports the nearest Directory.Build.props walking
+    up the tree; without this, the sibling profile props one level up
+    (../Directory.Build.props) would be applied to this packaging project and
+    duplicate its analyzer references. This stub stops that search. It carries
+    no settings and must stay empty.
+  -->
+</Project>

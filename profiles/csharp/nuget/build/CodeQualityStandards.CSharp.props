@@ -1,0 +1,32 @@
+<Project>
+  <!--
+    Auto-imported into any project that references CodeQualityStandards.CSharp.
+    "reference alone" wiring: the consumer inherits analysis settings, the
+    global severities config, and the Sonar parameter file with no other setup.
+
+    $(MSBuildThisFileDirectory) resolves to this package's build/ folder once
+    installed, which is where quality.globalconfig and SonarLint.xml are packed.
+  -->
+  <PropertyGroup>
+    <!-- Brief: AnalysisLevel = latest-Recommended -->
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      Switchable warnings-as-errors. Greenfield sets true (default here);
+      the legacy-retrofit path sets false. This is the single knob the
+      scaffold/audit skills flip - never hardcode TreatWarningsAsErrors.
+    -->
+    <CodeQualityWarningsAsErrors Condition="'$(CodeQualityWarningsAsErrors)' == ''">true</CodeQualityWarningsAsErrors>
+    <TreatWarningsAsErrors Condition="'$(CodeQualityWarningsAsErrors)' == 'true'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Global severities (is_global=true) applied via the compiler. -->
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)quality.globalconfig" />
+    <!-- Sonar rule parameters (method length, params, complexity, file length). -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+</Project>

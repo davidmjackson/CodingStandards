@@ -1,0 +1,51 @@
+# Global AnalyzerConfig for the Code Quality Standard (C#).
+#
+# is_global = true makes this apply to every source file without a directory
+# hierarchy, so it works when shipped inside a NuGet package. Severities live
+# here; the numeric limits live in SonarLint.xml. Nothing in this file may
+# restate a threshold number.
+is_global = true
+# Later-loaded global configs win ties; keep ours authoritative.
+global_level = -100
+
+##############################################################################
+# Enforced thresholds (map 1:1 to /core/THRESHOLDS.md)
+##############################################################################
+
+# T1 Method / function length (limit 30 in SonarLint.xml)
+dotnet_diagnostic.S138.severity = warning
+
+# T2 Cyclomatic complexity (limit 10 in SonarLint.xml)
+dotnet_diagnostic.S1541.severity = warning
+
+# T3 Cognitive complexity (limit 15 in SonarLint.xml)
+dotnet_diagnostic.S3776.severity = warning
+
+# T4 Parameters (limit 4 in SonarLint.xml)
+dotnet_diagnostic.S107.severity = warning
+
+# T5 File / class length (limit 400 in SonarLint.xml)
+dotnet_diagnostic.S104.severity = warning
+
+##############################################################################
+# Error-handling rules (judgement principles the analyzers CAN check)
+##############################################################################
+
+# Do not swallow exceptions / empty catch
+dotnet_diagnostic.S2486.severity = warning   # do not ignore caught exceptions
+dotnet_diagnostic.S108.severity  = warning   # nested blocks should not be empty
+# Do not catch the base type
+dotnet_diagnostic.CA1031.severity = warning   # do not catch general exception types
+
+##############################################################################
+# StyleCop: keep it about formatting, not documentation ceremony.
+# Documentation-comment rules are noise for this standard; the dispatcher's
+# formatter owns layout. Disable the doc-comment family.
+##############################################################################
+dotnet_diagnostic.SA0001.severity = none   # XML comment analysis (docs disabled)
+dotnet_diagnostic.SA1600.severity = none   # elements should be documented
+dotnet_diagnostic.SA1633.severity = none   # file header
+dotnet_diagnostic.SA1200.severity = none   # using directives placement
+dotnet_diagnostic.SA1101.severity = none   # prefix local calls with this
+dotnet_diagnostic.SA1309.severity = none   # field names begin with underscore
+dotnet_diagnostic.SA1413.severity = none   # trailing comma in multiline

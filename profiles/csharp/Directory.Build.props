@@ -1,0 +1,34 @@
+<Project>
+  <!--
+    Source-consumption form of the C# profile, for repos that vendor this
+    folder instead of referencing the NuGet meta-package. It applies the same
+    standard using the same two canonical files (quality.globalconfig and
+    SonarLint.xml in this directory) - so thresholds are never restated.
+
+    Preferred path is the NuGet meta-package (CodeQualityStandards.CSharp);
+    see /profiles/csharp/nuget. Use this only where a package feed is not
+    available. Drop this file at the consuming repo root beside these two
+    config files.
+  -->
+  <PropertyGroup>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- Switchable: greenfield true, legacy retrofit false. -->
+    <CodeQualityWarningsAsErrors Condition="'$(CodeQualityWarningsAsErrors)' == ''">true</CodeQualityWarningsAsErrors>
+    <TreatWarningsAsErrors Condition="'$(CodeQualityWarningsAsErrors)' == 'true'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774" PrivateAssets="all" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="all" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Include="$(MSBuildThisFileDirectory)quality.globalconfig" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+</Project>

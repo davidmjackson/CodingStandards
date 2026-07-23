@@ -16,14 +16,17 @@ match in the same change.
 | T2  | Cyclomatic complexity    | 10 per method        | Independent paths a single method may contain. |
 | T3  | Cognitive complexity     | 15 per method        | How hard the method is for a human to follow. |
 | T4  | Parameters               | 4 max                | More than four parameters want to be an object. |
-| T5  | Class / module length    | 300–400 lines        | Warn at 300, fail at 400. A file past this holds more than one job. |
+| T5  | Class / module length    | 400 lines (hard)     | Analyzer fails at 400. 300 is a review target (judgement, not gated). |
 | T6  | Duplication              | under 3 percent      | Copy-paste is a missing abstraction. |
 | T7  | Test coverage            | 80 percent minimum   | Below this, behaviour is unverified. |
 
 ### Notes on T5
 
-`300–400` is a band, not two numbers. Profiles configure a **warning at 300**
-and a **hard failure at 400** so growth is visible before it becomes a breach.
+The brief states the limit as a `300–400` band. Only one number can be a
+deterministic analyzer gate, so the **enforced ceiling is 400** (Principle 2:
+enforcement must be measurable). **300** remains the soft target flagged at
+review under the judgement rules — it is deliberately *not* a second config
+value, so no threshold is defined twice.
 
 ## Rule mapping per profile
 
@@ -32,11 +35,11 @@ rule that only exists as prose does not count.
 
 | ID  | C# (Sonar / analyzers)        | JS/TS (ESLint)                   | Python (Ruff / tools)        |
 |-----|-------------------------------|----------------------------------|------------------------------|
-| T1  | `S138`                        | `max-lines-per-function`         | `PLR0915` + `pylint`-style   |
-| T2  | `S1541` / `CA1502`            | `complexity`                     | `C901` (mccabe)              |
-| T3  | `S3776`                       | `sonarjs/cognitive-complexity`   | `C901` (proxy, mccabe)       |
-| T4  | `S107`                        | `max-params`                     | `PLR0913`                    |
-| T5  | `S1200` (file) / `CA1506`     | `max-lines`                      | file line-count via lint     |
+| T1  | `S138` (`max`=30)             | `max-lines-per-function`         | `PLR0915`                    |
+| T2  | `S1541` (=10)                 | `complexity`                     | `C901` (mccabe)              |
+| T3  | `S3776` (`threshold`=15)      | `sonarjs/cognitive-complexity`   | `C901` (proxy, mccabe)       |
+| T4  | `S107` (`max`=4)              | `max-params`                     | `PLR0913`                    |
+| T5  | `S104` (`maximumFileLocThreshold`=400) | `max-lines`             | `PLR0915` file scope / lint  |
 | T6  | Sonar CPD / **jscpd**         | **jscpd**                        | **jscpd**                    |
 | T7  | coverlet + threshold gate     | coverage tool threshold          | `coverage`/`pytest --cov`    |
 

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SonarAnalyzer rule parameters. This is the ONLY place C# threshold *numbers*
+  live, and every number here traces to /core/THRESHOLDS.md. Severities live in
+  quality.globalconfig; this file only sets the limits.
+
+  SonarAnalyzer.CSharp picks this up automatically when it is supplied as an
+  AdditionalFile named "SonarLint.xml" (wired by the profile props).
+-->
+<AnalysisInput>
+  <Rules>
+    <!-- T1 Method length = 30 (default 80) -->
+    <Rule>
+      <Key>S138</Key>
+      <Parameters>
+        <Parameter><Key>max</Key><Value>30</Value></Parameter>
+      </Parameters>
+    </Rule>
+
+    <!-- T2 Cyclomatic complexity = 10 (default 10) -->
+    <Rule>
+      <Key>S1541</Key>
+      <Parameters>
+        <Parameter><Key>maximumFunctionComplexityThreshold</Key><Value>10</Value></Parameter>
+      </Parameters>
+    </Rule>
+
+    <!-- T3 Cognitive complexity = 15 (default 15) -->
+    <Rule>
+      <Key>S3776</Key>
+      <Parameters>
+        <Parameter><Key>threshold</Key><Value>15</Value></Parameter>
+        <Parameter><Key>propertyThreshold</Key><Value>15</Value></Parameter>
+      </Parameters>
+    </Rule>
+
+    <!-- T4 Parameters = 4 (default 7) -->
+    <Rule>
+      <Key>S107</Key>
+      <Parameters>
+        <Parameter><Key>max</Key><Value>4</Value></Parameter>
+      </Parameters>
+    </Rule>
+
+    <!-- T5 File length = 400 (default 1000) -->
+    <Rule>
+      <Key>S104</Key>
+      <Parameters>
+        <Parameter><Key>maximumFileLocThreshold</Key><Value>400</Value></Parameter>
+      </Parameters>
+    </Rule>
+  </Rules>
+</AnalysisInput>

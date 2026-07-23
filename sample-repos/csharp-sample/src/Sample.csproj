@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>Sample</RootNamespace>
+  </PropertyGroup>
+
+  <!-- One dependency reference: the whole standard arrives with this line. -->
+  <ItemGroup>
+    <PackageReference Include="CodeQualityStandards.CSharp" Version="1.0.0" />
+  </ItemGroup>
+
+  <!--
+    The deliberately-bad code is excluded by default so the passing state is the
+    committed state. prove-gate.sh sets IncludeViolations=true to compile it and
+    demonstrate the gate failing.
+  -->
+  <ItemGroup Condition="'$(IncludeViolations)' != 'true'">
+    <Compile Remove="violations/**/*.cs" />
+  </ItemGroup>
+</Project>

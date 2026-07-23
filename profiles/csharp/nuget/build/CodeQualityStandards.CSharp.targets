@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    Imported after the consuming project is fully evaluated (so $(IsTestProject)
+    is known). Test code follows different naming conventions than production
+    code; relaxing these there keeps the standard honest without weakening it
+    for shipped code. The thresholds in THRESHOLDS.md still apply to tests.
+  -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Underscore-separated test names (Method_Scenario_Expectation) are the
+         .NET testing convention; CA1707 forbids underscores in member names. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+</Project>

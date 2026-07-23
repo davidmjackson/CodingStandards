@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Meta-package. Ships no assembly: it bundles the analyzer set plus the
+    profile's build/ props so a consumer inherits the whole C# standard from a
+    single PackageReference.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeBuildOutputInPackage>false</IncludeBuildOutputInPackage>
+    <SuppressDependenciesWhenPacking>false</SuppressDependenciesWhenPacking>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <PackageId>CodeQualityStandards.CSharp</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Code Quality Standards</Authors>
+    <Description>One code-quality standard for C#: SonarAnalyzer, StyleCop, Roslynator and .NET analyzers, pre-configured to the shared thresholds. Reference this package alone to inherit the standard.</Description>
+    <PackageTags>analyzers;code-quality;sonar;stylecop;roslynator;standards</PackageTags>
+
+    <!-- A pure analyzer/build package: no lib, deliberately. Silence the "no lib" pack warnings. -->
+    <NoWarn>$(NoWarn);NU5128;NU5100</NoWarn>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+  </PropertyGroup>
+
+  <!--
+    Analyzers are forwarded to consumers: PrivateAssets="none" lets the
+    analyzers + build assets flow through this meta-package to the referencing
+    project. Versions trace to /core/THRESHOLDS.md rule mapping.
+  -->
+  <ItemGroup>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.29.0.143774" PrivateAssets="none" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118" PrivateAssets="none" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.15.0" PrivateAssets="none" />
+  </ItemGroup>
+
+  <!-- Ship the auto-import props and the two canonical config files inside build/. -->
+  <ItemGroup>
+    <None Include="build\CodeQualityStandards.CSharp.props" Pack="true" PackagePath="build\" />
+    <None Include="build\CodeQualityStandards.CSharp.targets" Pack="true" PackagePath="build\" />
+    <None Include="..\quality.globalconfig" Pack="true" PackagePath="build\quality.globalconfig" />
+    <None Include="..\SonarLint.xml" Pack="true" PackagePath="build\SonarLint.xml" />
+  </ItemGroup>
+</Project>

@@ -31,3 +31,6 @@ jscpd-report.*
 *.swp
 .idea/
 .vs/
+
+# Generated NuGet feed for sample acceptance tests
+sample-repos/.localfeed/
