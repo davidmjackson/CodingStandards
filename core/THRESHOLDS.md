@@ -35,11 +35,11 @@ rule that only exists as prose does not count.
 
 | ID  | C# (Sonar / analyzers)        | JS/TS (ESLint)                   | Python (Ruff / tools)        |
 |-----|-------------------------------|----------------------------------|------------------------------|
-| T1  | `S138` (`max`=30)             | `max-lines-per-function`         | `PLR0915`                    |
-| T2  | `S1541` (=10)                 | `complexity`                     | `C901` (mccabe)              |
+| T1  | `S138` (`max`=30)             | `max-lines-per-function`         | `PLR0915` (`max-statements`=30) |
+| T2  | `S1541` (=10)                 | `complexity`                     | `C901` (`max-complexity`=10) |
 | T3  | `S3776` (`threshold`=15)      | `sonarjs/cognitive-complexity`   | `C901` (proxy, mccabe)       |
-| T4  | `S107` (`max`=4)              | `max-params`                     | `PLR0913`                    |
-| T5  | `S104` (`maximumFileLocThreshold`=400) | `max-lines`             | `PLR0915` file scope / lint  |
+| T4  | `S107` (`max`=4)              | `max-params`                     | `PLR0913` (`max-args`=4)     |
+| T5  | `S104` (`maximumFileLocThreshold`=400) | `max-lines`             | gate check (see caveat)      |
 | T6  | Sonar CPD / **jscpd**         | **jscpd**                        | **jscpd**                    |
 | T7  | coverlet + threshold gate     | coverage tool threshold          | `coverage`/`pytest --cov`    |
 
@@ -53,6 +53,14 @@ rule that only exists as prose does not count.
 - **Duplication (T6)** is enforced uniformly with **jscpd** across all three
   languages so one tool and one percentage govern every stack. C# may
   additionally surface duplication through Sonar CPD, but jscpd is the gate.
+- **File length (T5) in Python.** Ruff has no module-length rule (no C0302
+  equivalent). Principle 2 permits "a build **or a check**", so the Python
+  profile enforces T5 with a deterministic line-count check in the gate rather
+  than a lint rule. C# (`S104`) and JS/TS (`max-lines`) use native rules.
+
+A threshold is enforced when it "fails a build or a check". Most rows above are
+named analyzer rules; T5 for Python is the one deterministic check. No
+threshold is enforced in more than one place.
 
 ## Definition of Done (measurable half)
 

@@ -1,0 +1,41 @@
+# Code Quality Standard - Python profile (canonical).
+#
+# This is the single source of the Python threshold numbers; every value traces
+# to /core/THRESHOLDS.md. Consumers reference this file (see the sample's
+# `extend = "..."`) or merge pyproject-fragment.toml. Do not restate these
+# numbers elsewhere.
+
+line-length = 100
+target-version = "py312"
+
+[lint]
+# lint + import sorting + complexity, as required by the brief.
+select = [
+    "E", "F", "W",   # pycodestyle + pyflakes (correctness, style)
+    "I",             # isort - import sorting
+    "C90",           # mccabe - cyclomatic complexity (C901)
+    "PL",            # pylint - includes PLR0913 (args) and PLR0915 (statements)
+    "B",             # flake8-bugbear - likely bugs
+    "UP",            # pyupgrade - modern syntax
+    "SIM",           # flake8-simplify - reduce complexity
+    "BLE",           # flake8-blind-except - no bare/broad except (error handling)
+]
+ignore = [
+    "PLR2004",  # magic-value-comparison: too noisy as a baseline rule
+    "PLR0917",  # too-many-positional-arguments: T4 is owned by PLR0913 alone
+]
+
+[lint.mccabe]
+# T2 Cyclomatic complexity: fail above 10.
+max-complexity = 10
+
+[lint.pylint]
+# T4 Parameters: fail above 4 arguments.
+max-args = 4
+# T1 Method length: fail above 30 statements (Ruff's per-function size gate).
+max-statements = 30
+
+[format]
+# formatting is part of the standard; the gate runs `ruff format --check`.
+quote-style = "double"
+indent-style = "space"

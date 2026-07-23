@@ -1,0 +1,18 @@
+[project]
+name = "python-sample"
+version = "1.0.0"
+description = "Acceptance test for the Python profile."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+# T7 Coverage: the gate fails below 80%.
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

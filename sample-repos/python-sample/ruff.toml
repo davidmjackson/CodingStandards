@@ -1,0 +1,3 @@
+# The consumer references the shared profile with one line. Nothing else is
+# defined here - thresholds live in the profile's ruff.toml.
+extend = "../../profiles/python/ruff.toml"

@@ -1,0 +1,16 @@
+# Mergeable pyproject.toml fragment for the Python profile.
+#
+# Copy this [tool.ruff] block into a consuming pyproject.toml. It `extend`s the
+# canonical ruff.toml so the thresholds stay defined in exactly one place - set
+# the path to wherever this profile is vendored or installed.
+#
+# The gate also enforces file length (T5) and coverage (T7); see the profile
+# README / hooks. Those are not Ruff settings.
+
+[tool.ruff]
+extend = "profiles/python/ruff.toml"
+
+# --- Coverage gate (T7): run with `coverage`/`pytest-cov`. ---
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
