@@ -12,6 +12,25 @@ If the repo already has code that will not pass, stop and use
 [`audit-standards`](../audit-standards/SKILL.md) instead — it reports before it
 touches anything.
 
+## 0. Resolve the standard root (do this first)
+
+Every path in this skill — `profiles/`, `hooks/`, `core/`, `CLAUDE.md` — is
+relative to the **standard root**: the checkout of this repository. This skill
+file lives at `<standard-root>/skill/scaffold-standards/SKILL.md`, so derive the
+root from the skill's own location instead of assuming where the checkout is. A
+symlinked skill directory resolves correctly, because `..` applies to the real
+directory rather than the link:
+
+```bash
+STD=$(readlink -f ~/.claude/skills/scaffold-standards/../..) && echo "$STD"
+test -f "$STD/core/THRESHOLDS.md" && echo ok || echo "not the standard root"
+```
+
+Use the skill's actual directory if it was loaded from somewhere else (a plugin
+cache, a project-level `.claude/skills/`). If the check does not print `ok`, ask
+for the checkout path. Never leave a placeholder such as `<path-to>` in a config
+file you write, and never guess at the location.
+
 ## 1. Detect the stack
 
 Look at the repo:
@@ -54,16 +73,18 @@ export { default } from '@codequalitystandards/eslint-config/prettier';
 **Python** — create or extend `ruff.toml`:
 
 ```toml
-extend = "<path-to>/profiles/python/ruff.toml"
+extend = "$STD/profiles/python/ruff.toml"
 ```
 
-(or merge `profiles/python/pyproject-fragment.toml` into `pyproject.toml`).
+TOML does not expand shell variables: write the **resolved absolute path** from
+step 0, not the literal `$STD`. (Or merge
+`$STD/profiles/python/pyproject-fragment.toml` into `pyproject.toml`.)
 
 ## 3. Copy the two files every consumer needs
 
-1. `CLAUDE.md` → repo root.
-2. `hooks/settings.json` → `.claude/settings.json`, and `hooks/dispatch.sh` →
-   `hooks/dispatch.sh` (make it executable).
+1. `$STD/CLAUDE.md` → the consuming repo's root.
+2. `$STD/hooks/settings.json` → `.claude/settings.json`, and
+   `$STD/hooks/dispatch.sh` → `hooks/dispatch.sh` (make it executable).
 
 That is the whole contract: **one dependency reference plus two copied files.**
 Add nothing else. Any per-repo override needs an ADR (see the standard's
@@ -77,7 +98,8 @@ Overrides section).
 
 ## 5. Prove the gate is green
 
-Run the Stop gate once and confirm it passes on the new code:
+Run the Stop gate once, from the consuming repo, and confirm it passes on the new
+code (this is the copy made in step 3, not the one in the standard root):
 
 ```bash
 ./hooks/dispatch.sh stop

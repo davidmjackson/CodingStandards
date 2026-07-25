@@ -12,6 +12,25 @@ later, only when told, and only in small gated passes.
 > Hard rule: in the audit phase you do **not** modify code. No formatting, no
 > refactors, no "quick fixes". Report only.
 
+## 0. Resolve the standard root (do this first)
+
+Every path in this skill — `profiles/`, `hooks/`, `core/` — is relative to the
+**standard root**: the checkout of this repository. This skill file lives at
+`<standard-root>/skill/audit-standards/SKILL.md`, so derive the root from the
+skill's own location instead of assuming where the checkout is. A symlinked skill
+directory resolves correctly, because `..` applies to the real directory rather
+than the link:
+
+```bash
+STD=$(readlink -f ~/.claude/skills/audit-standards/../..) && echo "$STD"
+test -f "$STD/core/THRESHOLDS.md" && echo ok || echo "not the standard root"
+```
+
+Use the skill's actual directory if it was loaded from somewhere else (a plugin
+cache, a project-level `.claude/skills/`). If the check does not print `ok`, ask
+for the checkout path. Never leave a placeholder such as `<path-to>` in a config
+file you write, and never guess at the location.
+
 ## 1. Detect the stack
 
 - `*.csproj` / `*.sln` → **C#**
@@ -31,11 +50,13 @@ do **not** fail the build yet.
 <PropertyGroup><CodeQualityWarningsAsErrors>false</CodeQualityWarningsAsErrors></PropertyGroup>
 ```
 
-**JS/TS** — wire the config, but run ESLint in report mode (do not fail CI on it
-yet): collect results, don't gate.
+**JS/TS** — wire the shared config from `$STD/profiles/typescript/`, but run
+ESLint in report mode (do not fail CI on it yet): collect results, don't gate.
 
-**Python** — wire `ruff.toml`, but treat `ruff check` output as a report, not a
-gate.
+**Python** — wire `ruff.toml` with
+`extend = "$STD/profiles/python/ruff.toml"` (TOML does not expand shell
+variables — write the resolved absolute path from step 0), but treat
+`ruff check` output as a report, not a gate.
 
 ## 3. Audit and report (no code changes)
 
@@ -90,5 +111,5 @@ greenfield setting) so it stays clean.
 - Do not weaken or delete tests to make a gate pass.
 - Do not add analyzer suppressions to hide a violation; if a rule genuinely does
   not apply, justify it in the comment and flag it.
-- Do not change thresholds — they come from the standards repo. A genuine misfit
-  is an ADR, not a local edit.
+- Do not change thresholds — they come from `$STD/core/THRESHOLDS.md`, which is
+  the single source of truth. A genuine misfit is an ADR, not a local edit.
