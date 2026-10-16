@@ -23,7 +23,9 @@ echo "==> Packing the shared config and installing dependencies"
 mkdir -p vendor
 ( cd "$PROFILE" && npm pack --pack-destination "$SAMPLE_DIR/vendor" >/dev/null 2>&1 )
 mv -f vendor/codequalitystandards-eslint-config-*.tgz vendor/eslint-config.tgz
-npm install --no-audit --no-fund >/dev/null 2>&1 || { echo "npm install failed"; exit 2; }
+# Install the tarball explicitly: a plain `npm install` trusts the lockfile's
+# integrity hash and keeps a previously installed profile, testing stale rules.
+npm install -D --no-audit --no-fund file:vendor/eslint-config.tgz >/dev/null 2>&1 || { echo "npm install failed"; exit 2; }
 
 echo
 echo "== Proving the gate FAILS on bad code =="

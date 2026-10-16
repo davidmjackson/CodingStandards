@@ -1,6 +1,6 @@
 {
   "name": "@codequalitystandards/eslint-config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared ESLint (flat) + Prettier config implementing the code quality standard for JS/TS.",
   "type": "module",
   "main": "eslint.config.js",

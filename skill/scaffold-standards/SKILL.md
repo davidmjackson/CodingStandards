@@ -55,7 +55,9 @@ it to false.
 **JS/TS**
 
 ```bash
-npm install -D @codequalitystandards/eslint-config eslint prettier
+mkdir -p vendor
+cp "$STD/profiles/typescript/codequalitystandards-eslint-config-1.0.1.tgz" vendor/eslint-config.tgz
+npm install -D file:vendor/eslint-config.tgz eslint@9.39.5 prettier@3.9.10
 ```
 
 Create `eslint.config.js`:
@@ -82,7 +84,9 @@ step 0, not the literal `$STD`. (Or merge
 
 ## 3. Copy the two files every consumer needs
 
-1. `$STD/CLAUDE.md` → the consuming repo's root.
+1. `$STD/templates/CLAUDE.project.md` → the consuming repo's `CLAUDE.md`. Fill in every
+   `{{…}}`: ask for the stop condition and the weight-earning place rather than guessing.
+   Never copy `$STD/CLAUDE.md` itself: a copy drifts, and anything in it is inherited.
 2. `$STD/hooks/settings.json` → `.claude/settings.json`, and
    `$STD/hooks/dispatch.sh` → `hooks/dispatch.sh` (make it executable).
 

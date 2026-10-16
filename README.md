@@ -63,7 +63,9 @@ sets it `false`.
 ### JS/TS
 
 ```bash
-npm install -D @codequalitystandards/eslint-config eslint prettier
+mkdir -p vendor
+cp <standard-root>/profiles/typescript/codequalitystandards-eslint-config-1.0.1.tgz vendor/eslint-config.tgz
+npm install -D file:vendor/eslint-config.tgz eslint@9.39.5 prettier@3.9.10
 ```
 
 ```js
@@ -84,7 +86,8 @@ or merge [`profiles/python/pyproject-fragment.toml`](profiles/python/pyproject-f
 
 ### The two files (all stacks)
 
-1. Copy [`CLAUDE.md`](CLAUDE.md) to the repo root.
+1. Copy [`templates/CLAUDE.project.md`](templates/CLAUDE.project.md) to the repo root as
+   `CLAUDE.md` and fill it in. It points here; never copy this repo's `CLAUDE.md`.
 2. Copy [`hooks/settings.json`](hooks/settings.json) to `.claude/settings.json`
    and [`hooks/dispatch.sh`](hooks/dispatch.sh) into `hooks/`.
 
