@@ -1,6 +1,6 @@
 ---
 name: scaffold-standards
-description: Use when adopting the code quality standard in a NEW or greenfield repo (or a new project within one) - wires the language profile, copies CLAUDE.md and the hook settings, and turns warnings into errors from day one. Not for existing code with violations; use audit-standards for that.
+description: Use when adopting the code quality standard in a NEW or greenfield repo (or a new project within one) - wires the language profile, copies the CLAUDE.md pointer template and the hook settings, and turns warnings into errors from day one. Not for existing code with violations; use audit-standards for that.
 ---
 
 # Scaffold Standards (greenfield)
