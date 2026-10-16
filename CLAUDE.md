@@ -3,6 +3,13 @@
 This file governs all code written in this repository, including code you write.
 Read it before making changes.
 
+**Before starting any story, read [`core/SCOPE-DISCIPLINE.md`](core/SCOPE-DISCIPLINE.md).**
+This file and the thresholds govern *how* code is written. That one governs *how
+much* gets written, which is the failure the gates cannot catch: Sprintboard
+shipped good code, and roughly 30 percent of its artefacts were never asked for.
+It holds the stop-condition rule, four questions to answer before designing
+anything, and the signals that scope has already gone.
+
 ## Definition of Done
 
 A change is not complete until **all** of the following pass:
