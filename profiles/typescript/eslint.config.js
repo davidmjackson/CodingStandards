@@ -6,6 +6,7 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import sonarjs from 'eslint-plugin-sonarjs';
+import globals from 'globals';
 
 export default tseslint.config(
   { ignores: ['dist/**', 'coverage/**'] },
@@ -27,5 +28,12 @@ export default tseslint.config(
       // Error handling: no empty blocks, no swallowed errors.
       'no-empty': ['error', { allowEmptyCatch: false }],
     },
+  },
+  {
+    // A shared config cannot tell server from browser code, so plain JavaScript
+    // gets both sets of globals. no-undef stays on to catch misspelled names.
+    files: ['**/*.{js,cjs,mjs,jsx}'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
 );

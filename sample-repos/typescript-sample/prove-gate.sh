@@ -42,6 +42,14 @@ else
   done
 fi
 
+# Plain JavaScript keeps no-undef, so a misspelled name is still caught.
+undefined_log="$(npx eslint src/violations/undefinedName.js 2>&1)"
+if grep -q "'amout' is not defined" <<<"$undefined_log"; then
+  pass "eslint rejects an undefined name in plain JavaScript"
+else
+  fail "eslint missed an undefined name in plain JavaScript"
+fi
+
 # Duplication gate.
 dup="$(mktemp -d)"; cp src/violations/*.ts "$dup/"
 if ( cd "$dup" && npx --yes "$JSCPD" . --threshold 3 --min-lines 5 --min-tokens 50 --reporters console ) >/dev/null 2>&1; then
@@ -57,6 +65,12 @@ if npx eslint src/calculator.ts tests >/dev/null 2>&1; then
   pass "eslint finds no issues in clean code"
 else
   fail "eslint reported issues in clean code"; npx eslint src/calculator.ts tests
+fi
+
+if npx eslint src/plain >/dev/null 2>&1; then
+  pass "eslint accepts CommonJS and browser JavaScript"
+else
+  fail "eslint reported issues in plain JavaScript"; npx eslint src/plain
 fi
 
 if npx prettier --check src/calculator.ts tests >/dev/null 2>&1; then
