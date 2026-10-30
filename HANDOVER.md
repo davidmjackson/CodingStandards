@@ -2,17 +2,14 @@
 
 Current position only. Prune when an item closes.
 
-## Open: roll the gate out to consumers
+## Open: extend the gate to every other project
 
-`hooks/dispatch.sh` now fails closed, but consumers run their own copies. Each needs
-the new copy, and its gate proven against a deliberate violation:
+The three existing consumers run the fail-closed gate in CI and the Stop hook:
+AI-TagTeam, crm-reporting2 and leadgen-sprint-report. Next is `audit-standards` on each
+remaining repo, one at a time, turning on blocking only once a repo is clean. Code
+quality is the goal, so adoption does not wait on a measured saving in effort.
 
-- **AI-TagTeam:** copy is the old version. `verify` already exists.
-- **crm-reporting2:** copy is older still. `verify` lacks coverage and duplication.
-- **leadgen-sprint-report:** no hook. CI enforces Ruff and coverage but not T5 or T6.
-
-Then extend it to every other project. Code quality is the goal, so adoption does not
-wait on a measured saving in effort.
+Each consumer holds a copy of `hooks/dispatch.sh`, so a fix here needs copying out.
 
 ## Open: two sprintboard findings, recorded 2026-08-25, not acted on
 
