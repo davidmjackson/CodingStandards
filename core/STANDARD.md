@@ -1,6 +1,6 @@
 # The Standard
 
-One code-quality standard, enforced identically across C#, JS/TS, and Python.
+One code-quality standard with the same numbers across C#, JS/TS, and Python.
 This document holds the language-neutral principles. The numbers live in
 [`THRESHOLDS.md`](./THRESHOLDS.md) and are not repeated here.
 
@@ -69,7 +69,9 @@ A consuming project needs exactly:
 
 1. One dependency reference to its profile (NuGet meta-package, npm shared
    config, or `ruff.toml`/`pyproject` fragment).
-2. Two copied files: `CLAUDE.md` and `.claude/settings.json`.
+2. Three copied files: `CLAUDE.md`, `.claude/settings.json`, `hooks/dispatch.sh`.
+3. One gate command that CI also runs: `npm run verify` for JS/TS,
+   `hooks/dispatch.sh stop` for Python.
 
 Nothing else. If a project needs more than that, the standard has a gap — fix it
 here, not in the consumer.
