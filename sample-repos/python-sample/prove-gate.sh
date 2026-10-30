@@ -11,20 +11,10 @@ set -uo pipefail
 SAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUFF_VERSION="0.6.9"
 JSCPD="jscpd@4.0.5"
-MAX_FILE_LINES=400   # T5
 
 pass() { printf '  \033[32mPASS\033[0m  %s\n' "$1"; }
 fail() { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAILED=1; }
 FAILED=0
-
-# T5 file-length check: any .py over the ceiling fails.
-too_long() {
-  local root="$1" bad=1
-  while IFS= read -r f; do
-    [ "$(wc -l < "$f")" -gt "$MAX_FILE_LINES" ] && bad=0
-  done < <(find "$root" -name '*.py' -not -path '*/.venv/*' -not -path '*/__pycache__/*')
-  return $bad   # 0 = something too long
-}
 
 cd "$SAMPLE_DIR"
 echo "==> Preparing an isolated venv with pinned tools"
@@ -57,13 +47,29 @@ else
   pass "jscpd rejects the duplicated block (>3%)"
 fi
 
-# File-length gate (T5): a synthetic oversized module must be flagged.
-big="$(mktemp -d)"; { echo '"""oversized"""'; for i in $(seq 1 "$((MAX_FILE_LINES + 1))"); do echo "x$i = $i"; done; } > "$big/oversized.py"
-if too_long "$big"; then
-  pass "file-length check flags a module over $MAX_FILE_LINES lines"
+# Coverage gate (T7): a new consumer on the shipped fragment must count modules
+# that no test imports.
+adopter="$(mktemp -d)"
+cp ../../profiles/python/pyproject-fragment.toml "$adopter/pyproject.toml"
+mkdir "$adopter/tests"
+printf 'VALUE = 1\n' > "$adopter/app.py"
+printf 'import app\n\n\ndef test_value():\n    assert app.VALUE == 1\n' > "$adopter/tests/test_app.py"
+for i in $(seq 1 50); do echo "x$i = $i"; done > "$adopter/untested.py"
+cd "$adopter"
+if ! coverage run -m pytest -q >/dev/null 2>&1; then
+  fail "the coverage fixture's tests did not pass"
+elif coverage report --fail-under=80 >/dev/null 2>&1; then
+  fail "coverage ignored a module no test imports"
 else
-  fail "file-length check missed an oversized module"
+  pass "coverage counts a module no test imports"
 fi
+mv untested.py untested.txt
+if coverage run -m pytest -q >/dev/null 2>&1 && coverage report --fail-under=80 >/dev/null 2>&1; then
+  pass "the same project passes once that module is gone"
+else
+  fail "the coverage fixture failed for a reason other than the module"
+fi
+cd "$SAMPLE_DIR"
 
 echo
 echo "== Proving the gate PASSES once corrected =="
@@ -94,13 +100,6 @@ if npx --yes "$JSCPD" src tests >/dev/null 2>&1; then
   pass "jscpd finds no duplication in the clean tree (<3%)"
 else
   fail "jscpd reported duplication in the clean tree"
-fi
-
-# File-length gate on the real tree.
-if too_long src tests; then
-  fail "a real module exceeds $MAX_FILE_LINES lines"
-else
-  pass "all modules are within $MAX_FILE_LINES lines"
 fi
 
 deactivate 2>/dev/null || true

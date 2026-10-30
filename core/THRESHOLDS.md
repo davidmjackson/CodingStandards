@@ -41,7 +41,7 @@ rule that only exists as prose does not count.
 | T4  | `S107` (`max`=4)              | `max-params`                     | `PLR0913` (`max-args`=4)     |
 | T5  | `S104` (`maximumFileLocThreshold`=400) | `max-lines`             | gate check (see caveat)      |
 | T6  | Sonar CPD / **jscpd**         | **jscpd**                        | **jscpd**                    |
-| T7  | coverlet + threshold gate     | coverage tool threshold          | `coverage`/`pytest --cov`    |
+| T7  | coverlet threshold (consumer) | threshold in repo's `verify`     | `coverage report` in the gate |
 
 ### Cross-language caveats
 
@@ -50,13 +50,15 @@ rule that only exists as prose does not count.
   `C901` is configured to enforce T2 and acts as the practical proxy for T3.
   This is the one place where a single rule covers two thresholds, and it is
   documented here rather than hidden in the profile.
+- **Function length in Python.** `PLR0915` counts statements, not lines, so T1 is
+  an approximation there. A 30-statement Python function can exceed 30 lines.
 - **Duplication (T6)** is enforced uniformly with **jscpd** across all three
   languages so one tool and one percentage govern every stack. C# may
   additionally surface duplication through Sonar CPD, but jscpd is the gate.
 - **File length (T5) in Python.** Ruff has no module-length rule (no C0302
   equivalent). Principle 2 permits "a build **or a check**", so the Python
-  profile enforces T5 with a deterministic line-count check in the gate rather
-  than a lint rule. C# (`S104`) and JS/TS (`max-lines`) use native rules.
+  profile enforces T5 with a deterministic line-count check in
+  `hooks/dispatch.sh stop` rather than a lint rule. C# (`S104`) and JS/TS (`max-lines`) use native rules.
 
 A threshold is enforced when it "fails a build or a check". Most rows above are
 named analyzer rules; T5 for Python is the one deterministic check. No

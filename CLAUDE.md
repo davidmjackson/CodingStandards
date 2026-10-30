@@ -1,5 +1,12 @@
 # Code Quality Standard
 
+Done means: every project has one verify command, shared by CI and the Stop hook, that fails on a representative violation or a missing tool.
+Anything else is a new project. C# stays dormant until a project uses it, and this
+repo is not being generalised or published.
+
+**Where the weight is earned:** `hooks/dispatch.sh` and its tests. A gate that
+reports green without running is worse than no gate.
+
 This file governs all code written in this repository, including code you write.
 Read it before making changes.
 

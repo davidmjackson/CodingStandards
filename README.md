@@ -1,7 +1,7 @@
 # Code Quality Standards
 
-One code-quality standard, enforced identically across **C#**, **JS/TS**, and
-**Python**. This repository is the source of truth. Consuming projects inherit
+One code-quality standard with the same numbers across **C#**, **JS/TS**, and
+**Python**, for projects built by directing AI agents. This repository is the source of truth. Consuming projects inherit
 from it; they do not define their own rules.
 
 - **Principles and thresholds** are language-neutral and defined once in
@@ -9,8 +9,10 @@ from it; they do not define their own rules.
 - **Enforcement** is deterministic — every measurable threshold maps to an
   analyzer rule or check that fails a build. Prose is only for judgement calls
   (SOLID, cohesion, God classes), which live in [`CLAUDE.md`](CLAUDE.md).
-- **Adoption** is one dependency reference plus two copied files. Per-repo
+- **Adoption** is one dependency reference plus three copied files. Per-repo
   overrides need an ADR.
+- **Limits:** the rules approximate each other rather than match exactly; see the
+  caveats in `core/THRESHOLDS.md`.
 
 ## The thresholds
 
@@ -35,7 +37,7 @@ profiles/
   csharp/                 SonarAnalyzer + StyleCop + Roslynator, shipped as a NuGet meta-package
   typescript/             Shared ESLint flat config + Prettier (publishable npm package)
   python/                 ruff.toml + pyproject fragment
-hooks/                    One dispatcher (dispatch.sh) + settings.json template
+hooks/                    One dispatcher (dispatch.sh) + settings.json template + tests
 skill/
   scaffold-standards/     Greenfield adoption skill
   audit-standards/        Legacy-retrofit skill (audit first, fix in gated passes)
@@ -45,8 +47,9 @@ docs/                     Build brief
 
 ## Consume it in another project
 
-Every project needs **one dependency reference plus two copied files**
-(`CLAUDE.md` and `.claude/settings.json`) — nothing else.
+Every project needs **one dependency reference plus three copied files**
+(`CLAUDE.md`, `.claude/settings.json`, `hooks/dispatch.sh`) and one gate command
+that CI also runs.
 
 ### C#
 
@@ -75,6 +78,9 @@ export { default } from '@codequalitystandards/eslint-config';
 export { default } from '@codequalitystandards/eslint-config/prettier';
 ```
 
+Add a `verify` script to `package.json` covering lint, format, tests with an 80%
+coverage threshold, and jscpd. The Stop hook runs it and rejects a repo without one.
+
 ### Python
 
 ```toml
@@ -83,13 +89,20 @@ extend = "<path-to>/profiles/python/ruff.toml"
 ```
 
 or merge [`profiles/python/pyproject-fragment.toml`](profiles/python/pyproject-fragment.toml).
+Take its `[tool.coverage.run]` section either way: without a `source`, modules no test
+imports do not count against coverage.
 
-### The two files (all stacks)
+### The three files (all stacks)
 
 1. Copy [`templates/CLAUDE.project.md`](templates/CLAUDE.project.md) to the repo root as
    `CLAUDE.md` and fill it in. It points here; never copy this repo's `CLAUDE.md`.
-2. Copy [`hooks/settings.json`](hooks/settings.json) to `.claude/settings.json`
-   and [`hooks/dispatch.sh`](hooks/dispatch.sh) into `hooks/`.
+2. Copy [`hooks/settings.json`](hooks/settings.json) to `.claude/settings.json`.
+3. Copy [`hooks/dispatch.sh`](hooks/dispatch.sh) into `hooks/`.
+
+### Run the same gate in CI
+
+Hooks only constrain agent sessions, so CI must run the same command:
+`npm run verify` for JS/TS, `hooks/dispatch.sh stop` for Python.
 
 Then use the [`scaffold-standards`](skill/scaffold-standards/SKILL.md) skill for
 new code, or [`audit-standards`](skill/audit-standards/SKILL.md) to retrofit an
@@ -131,10 +144,11 @@ sample-repos/csharp-sample/prove-gate.sh      # dotnet 8
 sample-repos/python-sample/prove-gate.sh      # python 3.12
 sample-repos/typescript-sample/prove-gate.sh  # node 20
 
-hooks/test-dispatch.sh                         # the dispatcher, across all three
+hooks/test-dispatch.sh                         # post mode with real tools, across all three
+hooks/test-stop-gate.sh                        # fails closed, hermetic, runs in CI
 ```
 
-All four have been run and pass. See each sample's README for what it proves.
+See each sample's README for what it proves.
 
 ## Definition of Done
 

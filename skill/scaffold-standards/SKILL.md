@@ -72,6 +72,14 @@ Create `prettier.config.mjs`:
 export { default } from '@codequalitystandards/eslint-config/prettier';
 ```
 
+Add a `verify` script to `package.json`. The Stop gate runs it and is red without
+it, so it must cover everything Done requires, including an 80% coverage threshold
+in the test tool's config:
+
+```json
+"verify": "eslint . && prettier --check . && vitest run --coverage && npx --yes jscpd@4.0.5 . --threshold 3 --gitignore"
+```
+
 **Python** — create or extend `ruff.toml`:
 
 ```toml
@@ -82,16 +90,22 @@ TOML does not expand shell variables: write the **resolved absolute path** from
 step 0, not the literal `$STD`. (Or merge
 `$STD/profiles/python/pyproject-fragment.toml` into `pyproject.toml`.)
 
-## 3. Copy the two files every consumer needs
+Either way, take its `[tool.coverage.run]` section: without a `source`, modules no
+test imports do not count against coverage.
+
+## 3. Copy the three files every consumer needs
 
 1. `$STD/templates/CLAUDE.project.md` → the consuming repo's `CLAUDE.md`. Fill in every
    `{{…}}`: ask for the stop condition and the weight-earning place rather than guessing.
    Never copy `$STD/CLAUDE.md` itself: a copy drifts, and anything in it is inherited.
-2. `$STD/hooks/settings.json` → `.claude/settings.json`, and
-   `$STD/hooks/dispatch.sh` → `hooks/dispatch.sh` (make it executable).
+2. `$STD/hooks/settings.json` → `.claude/settings.json`.
+3. `$STD/hooks/dispatch.sh` → `hooks/dispatch.sh` (make it executable).
 
-That is the whole contract: **one dependency reference plus two copied files.**
-Add nothing else. Any per-repo override needs an ADR (see the standard's
+Then run the same gate in CI: `npm run verify` for JS/TS, `hooks/dispatch.sh stop`
+for Python. Hooks only constrain agent sessions.
+
+That is the whole contract: **one dependency reference, three copied files and one
+gate command.** Add nothing else. Any per-repo override needs an ADR (see the standard's
 Overrides section).
 
 ## 4. Confirm warnings-are-errors is on
@@ -109,5 +123,8 @@ code (this is the copy made in step 3, not the one in the standard root):
 ./hooks/dispatch.sh stop
 ```
 
-If it is red, fix the code — never weaken the standard. Report the result
-plainly: green, or which gate is red and why.
+A missing tool is red, so install it rather than removing the check. If the gate
+is red, fix the code — never weaken the standard. Then prove it rejects two
+deliberate violations, removing each afterwards: a rule breach, and an untested module
+that takes coverage below 80%. A `verify` script can exist without enforcing coverage. Report the result plainly: green, or
+which gate is red and why.
