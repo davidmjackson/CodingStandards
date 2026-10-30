@@ -102,6 +102,17 @@ else
   fail "jscpd reported duplication in the clean tree"
 fi
 
+# Duplication gate: installed packages are not the project's code.
+venv_project="$(mktemp -d)"
+mkdir -p "$venv_project/.venv/lib" "$venv_project/.venv/lib64"
+for i in $(seq 1 60); do echo "value_$i = compute($i, 'same line of text', $i * 2)"; done > "$venv_project/.venv/lib/dep.py"
+cp "$venv_project/.venv/lib/dep.py" "$venv_project/.venv/lib64/dep.py"
+if CLAUDE_PROJECT_DIR="$venv_project" ../../hooks/dispatch.sh stop </dev/null >/dev/null 2>&1; then
+  pass "the duplication gate ignores a virtualenv"
+else
+  fail "the duplication gate measured a virtualenv"
+fi
+
 deactivate 2>/dev/null || true
 echo
 if [ "$FAILED" -eq 0 ]; then

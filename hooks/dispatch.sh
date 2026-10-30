@@ -195,7 +195,8 @@ gate_python() {
 
 gate_duplication() {
   log "Duplication: jscpd"
-  require npx && check "Duplication" npx --yes jscpd@4.0.5 . --threshold 3 --gitignore
+  require npx && check "Duplication" npx --yes jscpd@4.0.5 . --threshold 3 --gitignore \
+    --ignore '**/.venv/**,**/venv/**,**/node_modules/**'
 }
 
 # True when Claude Code is re-running Stop after this gate already blocked once.
