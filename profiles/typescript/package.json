@@ -1,6 +1,6 @@
 {
   "name": "@codequalitystandards/eslint-config",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared ESLint (flat) + Prettier config implementing the code quality standard for JS/TS.",
   "type": "module",
   "main": "eslint.config.js",
@@ -16,9 +16,9 @@
   "keywords": ["eslint", "eslintconfig", "prettier", "code-quality", "sonarjs", "standards"],
   "license": "MIT",
   "dependencies": {
-    "@eslint/js": "^9.13.0",
-    "typescript-eslint": "^8.11.0",
-    "eslint-plugin-sonarjs": "^3.0.1"
+    "@eslint/js": "9.39.5",
+    "typescript-eslint": "8.72.1",
+    "eslint-plugin-sonarjs": "4.2.2"
   },
   "peerDependencies": {
     "eslint": "^9.0.0",

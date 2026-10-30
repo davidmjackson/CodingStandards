@@ -56,7 +56,7 @@ it to false.
 
 ```bash
 mkdir -p vendor
-cp "$STD/profiles/typescript/codequalitystandards-eslint-config-1.0.1.tgz" vendor/eslint-config.tgz
+cp "$STD/profiles/typescript/codequalitystandards-eslint-config-1.0.2.tgz" vendor/eslint-config.tgz
 npm install -D file:vendor/eslint-config.tgz eslint@9.39.5 prettier@3.9.10
 ```
 

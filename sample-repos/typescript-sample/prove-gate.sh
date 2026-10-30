@@ -67,7 +67,7 @@ fi
 
 test_log="$(mktemp)"
 if npx vitest run --coverage >"$test_log" 2>&1; then
-  pct="$(grep -oE 'All files[^|]*\| *[0-9.]+' "$test_log" | grep -oE '[0-9.]+$' | head -1)"
+  pct="$(grep -oE 'Statements +: +[0-9.]+' "$test_log" | grep -oE '[0-9.]+$')"
   pass "tests pass and coverage gate holds (statements ${pct:-?}%)"
 else
   fail "tests or coverage threshold failed"; grep -iE "threshold|ERROR" "$test_log" | head
