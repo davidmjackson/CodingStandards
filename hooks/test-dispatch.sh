@@ -30,6 +30,11 @@ echo "== TypeScript (.ts) =="
 if [ -d "$SAMPLES/typescript-sample/node_modules" ]; then
   if post "$SAMPLES/typescript-sample/src/calculator.ts"; then pass "clean .ts passes"; else fail "clean .ts rejected"; fi
   if post "$SAMPLES/typescript-sample/src/violations/badCode.ts"; then fail "bad .ts passed"; else pass "bad .ts rejected (non-zero)"; fi
+  tmp="$SAMPLES/typescript-sample/src/tempFormat.ts"
+  printf 'export const value   =   1\n' > "$tmp"
+  post "$tmp"
+  if grep -q 'value = 1' "$tmp"; then pass "post mode formats the edited file"; else fail "post mode left the file unformatted"; fi
+  rm -f "$tmp"
 else
   fail "typescript-sample not installed (run its prove-gate.sh first)"
 fi

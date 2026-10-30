@@ -11,6 +11,12 @@
 extend = "profiles/python/ruff.toml"
 
 # --- Coverage gate (T7): run with `coverage`/`pytest-cov`. ---
+# Without a source, modules that no test imports vanish from the percentage.
+# Packages need an __init__.py to be found, or list them in source explicitly.
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", ".venv/*"]
+
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
