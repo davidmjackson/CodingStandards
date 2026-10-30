@@ -11,6 +11,23 @@ quality is the goal, so adoption does not wait on a measured saving in effort.
 
 Each consumer holds a copy of `hooks/dispatch.sh`, so a fix here needs copying out.
 
+**Blocking the next rollout:** the shared ESLint profile assumes TypeScript. On
+CommonJS and browser JavaScript it reports false `no-undef` and `no-require-imports`
+errors: 661 of 718 messages on scrumpoker. It needs a JavaScript-aware layer before
+any plain JS repo can gate on it.
+
+**scrumpoker audit, 2026-10-30, read-only, no code changed.** 57 real lint findings,
+87 files unformatted, 3.82% duplication (over 3%, mostly the two HTML pages), 90.03%
+line coverage excluding the browser code, `npm audit` clean. `public/js/app.js` is
+767 lines with a complexity of 36 in `handleServerMessage`. `lib/validate.js` is
+unused. No `CLAUDE.md` or stop condition. Awaiting a decision on Pass A.
+
+## Open: AI-TagTeam needs redeploying
+
+The upgrades are merged to `feat/referee`, but the live checkout still has zod 3
+installed. It needs `npm ci`, `npm run build`, a Claude Code restart, and one real
+debate. No live debate has run on zod 4.
+
 ## Open: two sprintboard findings, recorded 2026-08-25, not acted on
 
 1. **Sprintboard copies this standard instead of consuming it.** Its `eslint.config.js`
