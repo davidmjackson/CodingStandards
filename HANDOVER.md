@@ -22,11 +22,11 @@ line coverage excluding the browser code, `npm audit` clean. `public/js/app.js` 
 767 lines with a complexity of 36 in `handleServerMessage`. `lib/validate.js` is
 unused. No `CLAUDE.md` or stop condition. Awaiting a decision on Pass A.
 
-## Open: AI-TagTeam needs redeploying
+## Open: prove AI-TagTeam on zod 4
 
-The upgrades are merged to `feat/referee`, but the live checkout still has zod 3
-installed. It needs `npm ci`, `npm run build`, a Claude Code restart, and one real
-debate. No live debate has run on zod 4.
+The upgrades are installed and built on `feat/referee`. Schemas and input rejection
+match the reviewed build over stdio, but no live Codex debate has run on zod 4. If one
+fails, revert that merge, then rerun `npm ci` and `npm run build`.
 
 ## Open: two sprintboard findings, recorded 2026-08-25, not acted on
 
