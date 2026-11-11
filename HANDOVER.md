@@ -2,14 +2,11 @@
 
 Current position only. Prune when an item closes.
 
-## Open: copy the fixed dispatcher to the three consumers
+## Consumers
 
-`fix/gate-fail-closed` makes Python detection fail closed (all three Ruff config forms,
-red on `.py` files without one, red when no stack is found) and switches Ruff to concise
-output so rule codes survive the 40-line tail. AI-TagTeam, crm-reporting2 and
-leadgen-sprint-report each hold a byte-identical copy of `hooks/dispatch.sh`. Copy it to
-each, run that repo's gate, and give each its own stage review. None of them is newly
-red: the two JS repos have no `.py` files and leadgen has `ruff.toml`.
+AI-TagTeam, crm-reporting2 and leadgen-sprint-report run the fail-closed dispatcher from
+`b08bd20`, merged 2026-11-11 with a stage review each. Each holds a copy, so a dispatcher
+fix here needs copying out again.
 
 ## Open: observe outcomes before wider adoption
 
