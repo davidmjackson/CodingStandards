@@ -2,122 +2,93 @@
 #
 # Acceptance test for the Python profile.
 #
-# Proves the gate FAILS on deliberately-bad code and PASSES once corrected.
+# Runs the sample's real gate, hooks/dispatch.sh stop, through three states:
+# green as shipped, red for the intended reason once a violation is planted in
+# its inputs, and green again once it is removed.
 # Self-contained: it builds a venv and pins its own tools.
 #
 #     ./prove-gate.sh
 set -uo pipefail
 
 SAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GATE="$SAMPLE_DIR/../../hooks/dispatch.sh"
+FIXTURES="$SAMPLE_DIR/../fixtures/python"
+FRAGMENT="$SAMPLE_DIR/../../profiles/python/pyproject-fragment.toml"
 RUFF_VERSION="0.6.9"
-JSCPD="jscpd@4.0.5"
+PYTEST_VERSION="9.1.1"
+COVERAGE_VERSION="7.15.2"
+DUPLICATE_DIR=.venv/qa-duplicate
+PLANTED=(src/bad_code.py src/untested.py "$DUPLICATE_DIR/a.py" "$DUPLICATE_DIR/b.py")
 
-pass() { printf '  \033[32mPASS\033[0m  %s\n' "$1"; }
-fail() { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAILED=1; }
-FAILED=0
+# shellcheck source=../prove-lib.sh
+. "$SAMPLE_DIR/../prove-lib.sh"
+
+gate() {
+  GATE_OUTPUT="$(CLAUDE_PROJECT_DIR="$SAMPLE_DIR" "$GATE" stop </dev/null 2>&1)"
+  GATE_STATUS=$?
+}
+
+write_untested_module() {
+  for i in $(seq 1 50); do echo "x$i = $i"; done > "$1"
+}
+
+# The shipped fragment's coverage source must count modules no test imports:
+# the report fails on the threshold, then passes once that module is gone.
+prove_fragment_counts_untested_modules() {
+  local adopter report; adopter="$(mktemp -d)"
+  cp "$FRAGMENT" "$adopter/pyproject.toml"
+  mkdir "$adopter/tests"
+  printf 'VALUE = 1\n' > "$adopter/app.py"
+  printf 'import app\n\n\ndef test_value():\n    assert app.VALUE == 1\n' > "$adopter/tests/test_app.py"
+  write_untested_module "$adopter/untested.py"
+  cd "$adopter" || return
+  coverage run -m pytest -q >/dev/null 2>&1 || { fail "the fragment fixture's tests did not pass"; return; }
+  report="$(coverage report --fail-under=80 2>&1)"
+  grep -q 'less than fail-under=80' <<<"$report" &&
+    pass "the shipped fragment counts a module no test imports" ||
+    fail "the shipped fragment ignored a module no test imports: $report"
+  mv untested.py untested.txt
+  coverage run -m pytest -q >/dev/null 2>&1 && coverage report --fail-under=80 >/dev/null 2>&1 &&
+    pass "the same project passes once that module is gone" ||
+    fail "the fragment fixture failed for a reason other than the module"
+  cd "$SAMPLE_DIR" || return
+}
 
 cd "$SAMPLE_DIR"
+refuse_existing "${PLANTED[@]}" "$DUPLICATE_DIR"
+trap 'cd "$SAMPLE_DIR" && rm -f "${PLANTED[@]}" && rmdir "$DUPLICATE_DIR" 2>/dev/null' EXIT
+
 echo "==> Preparing an isolated venv with pinned tools"
 python3 -m venv .venv
 # shellcheck disable=SC1091
 . .venv/bin/activate
 pip install -q --upgrade pip
-pip install -q "ruff==$RUFF_VERSION" pytest coverage
+pip install -q "ruff==$RUFF_VERSION" "pytest==$PYTEST_VERSION" "coverage==$COVERAGE_VERSION"
 
 echo
-echo "== Proving the gate FAILS on bad code =="
+echo "== The real gate: green, red for the intended reason, green again =="
+expect_green "the gate is green as shipped"
 
-# Analyzer gate: the violations must trip the mapped rules.
-viol_log="$(mktemp)"
-if ruff check violations/ >"$viol_log" 2>&1; then
-  fail "ruff unexpectedly accepted the violations"
-else
-  fired="$(grep -oE '(PLR0915|C901|PLR0913)' "$viol_log" | sort -u | tr '\n' ' ')"
-  pass "ruff rejects violations (rules: ${fired:-none})"
-  for r in PLR0915 C901 PLR0913; do
-    grep -q "$r" "$viol_log" || fail "expected rule $r did not fire"
-  done
-fi
+cp "$FIXTURES/bad_code.py" src/
+expect_red "planted violations fail lint and duplication" \
+  PLR0915 C901 PLR0913 "Duplication failed"
+rm -f src/bad_code.py
 
-# Duplication gate: the duplicated block must breach 3%.
-dup="$(mktemp -d)"; cp violations/*.py "$dup/"
-if ( cd "$dup" && npx --yes "$JSCPD" . --threshold 3 --min-lines 5 --min-tokens 50 --reporters console ) >/dev/null 2>&1; then
-  fail "jscpd did not flag the duplicated block"
-else
-  pass "jscpd rejects the duplicated block (>3%)"
-fi
+write_untested_module src/untested.py
+expect_red "an untested module fails on coverage alone" \
+  "Python coverage failed" -- "Ruff check failed" "Ruff format failed" "Duplication failed"
+rm -f src/untested.py
 
-# Coverage gate (T7): a new consumer on the shipped fragment must count modules
-# that no test imports.
-adopter="$(mktemp -d)"
-cp ../../profiles/python/pyproject-fragment.toml "$adopter/pyproject.toml"
-mkdir "$adopter/tests"
-printf 'VALUE = 1\n' > "$adopter/app.py"
-printf 'import app\n\n\ndef test_value():\n    assert app.VALUE == 1\n' > "$adopter/tests/test_app.py"
-for i in $(seq 1 50); do echo "x$i = $i"; done > "$adopter/untested.py"
-cd "$adopter"
-if ! coverage run -m pytest -q >/dev/null 2>&1; then
-  fail "the coverage fixture's tests did not pass"
-elif coverage report --fail-under=80 >/dev/null 2>&1; then
-  fail "coverage ignored a module no test imports"
-else
-  pass "coverage counts a module no test imports"
-fi
-mv untested.py untested.txt
-if coverage run -m pytest -q >/dev/null 2>&1 && coverage report --fail-under=80 >/dev/null 2>&1; then
-  pass "the same project passes once that module is gone"
-else
-  fail "the coverage fixture failed for a reason other than the module"
-fi
-cd "$SAMPLE_DIR"
+expect_green "the gate is green again once the violations are removed"
+
+mkdir "$DUPLICATE_DIR"
+for i in $(seq 1 60); do echo "value_$i = compute($i, 'same line of text', $i * 2)"; done > "$DUPLICATE_DIR/a.py"
+cp "$DUPLICATE_DIR/a.py" "$DUPLICATE_DIR/b.py"
+expect_green "the gate ignores a virtualenv's files"
 
 echo
-echo "== Proving the gate PASSES once corrected =="
-
-# Analyzer + format gates on clean code.
-if ruff check src tests >/dev/null 2>&1; then
-  pass "ruff finds no lint issues in clean code"
-else
-  fail "ruff reported issues in clean code"; ruff check src tests
-fi
-if ruff format --check src tests >/dev/null 2>&1; then
-  pass "ruff format reports no changes needed"
-else
-  fail "clean code is not formatted"; ruff format --check src tests
-fi
-
-# Coverage gate (T7).
-cov_log="$(mktemp)"
-if coverage run -m pytest -q >"$cov_log" 2>&1 && coverage report --fail-under=80 >>"$cov_log" 2>&1; then
-  pct="$(grep -oE 'TOTAL.* [0-9]+%' "$cov_log" | grep -oE '[0-9]+%' | tail -1)"
-  pass "tests pass and coverage gate holds (${pct:-?})"
-else
-  fail "tests or coverage threshold failed"; tail -5 "$cov_log"
-fi
-
-# Duplication gate on the clean tree.
-if npx --yes "$JSCPD" src tests >/dev/null 2>&1; then
-  pass "jscpd finds no duplication in the clean tree (<3%)"
-else
-  fail "jscpd reported duplication in the clean tree"
-fi
-
-# Duplication gate: installed packages are not the project's code.
-venv_project="$(mktemp -d)"
-mkdir -p "$venv_project/.venv/lib" "$venv_project/.venv/lib64"
-for i in $(seq 1 60); do echo "value_$i = compute($i, 'same line of text', $i * 2)"; done > "$venv_project/.venv/lib/dep.py"
-cp "$venv_project/.venv/lib/dep.py" "$venv_project/.venv/lib64/dep.py"
-if CLAUDE_PROJECT_DIR="$venv_project" ../../hooks/dispatch.sh stop </dev/null >/dev/null 2>&1; then
-  pass "the duplication gate ignores a virtualenv"
-else
-  fail "the duplication gate measured a virtualenv"
-fi
+echo "== The shipped profile =="
+prove_fragment_counts_untested_modules
 
 deactivate 2>/dev/null || true
-echo
-if [ "$FAILED" -eq 0 ]; then
-  echo "==> Python gate proven: fails on bad code, passes when corrected."
-  exit 0
-fi
-echo "==> Python gate proof FAILED."
-exit 1
+finish "Python gate"

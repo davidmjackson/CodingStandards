@@ -2,101 +2,72 @@
 #
 # Acceptance test for the JS/TS profile.
 #
-# Proves the gate FAILS on deliberately-bad code and PASSES once corrected.
-# The shared ESLint/Prettier config is consumed as a packed tarball, exactly as
-# a published package would be installed.
+# Runs the sample's real gate, `npm run verify`, through three states: green as
+# shipped, red for the intended reason once a violation is planted in its
+# inputs, and green again once it is removed. The shared config is packed from
+# source and installed against the tracked lockfile, as a consumer would.
 #
 #     ./prove-gate.sh
 set -uo pipefail
 
 SAMPLE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SAMPLE_DIR/../.." && pwd)"
-PROFILE="$REPO_ROOT/profiles/typescript"
-JSCPD="jscpd@4.0.5"
+PROFILE="$SAMPLE_DIR/../../profiles/typescript"
+FIXTURES="$SAMPLE_DIR/../fixtures/typescript"
 
-pass() { printf '  \033[32mPASS\033[0m  %s\n' "$1"; }
-fail() { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAILED=1; }
-FAILED=0
+PLANTED=(src/badCode.ts src/undefinedName.js src/untested.js tests/copy.test.ts)
+
+# shellcheck source=../prove-lib.sh
+. "$SAMPLE_DIR/../prove-lib.sh"
+
+gate() {
+  GATE_OUTPUT="$(npm run --silent verify 2>&1)"
+  GATE_STATUS=$?
+}
+
+# Four small functions no test calls: lint-clean, formatted, not duplicated.
+write_untested_module() {
+  local name separator=''
+  for name in double:2 triple:3 quadruple:4 quintuple:5; do
+    printf '%sexport function %s(value) {\n  return value * %s;\n}\n' \
+      "$separator" "${name%%:*}" "${name##*:}"
+    separator=$'\n'
+  done > src/untested.js
+}
 
 cd "$SAMPLE_DIR"
-echo "==> Packing the shared config and installing dependencies"
+refuse_existing "${PLANTED[@]}"
+trap 'cd "$SAMPLE_DIR" && rm -f "${PLANTED[@]}"' EXIT
+
+echo "==> Packing the shared config and installing from the lockfile"
 mkdir -p vendor
 ( cd "$PROFILE" && npm pack --pack-destination "$SAMPLE_DIR/vendor" >/dev/null 2>&1 )
 mv -f vendor/codequalitystandards-eslint-config-*.tgz vendor/eslint-config.tgz
-# Install the tarball explicitly: a plain `npm install` trusts the lockfile's
-# integrity hash and keeps a previously installed profile, testing stale rules.
-npm install -D --no-audit --no-fund file:vendor/eslint-config.tgz >/dev/null 2>&1 || { echo "npm install failed"; exit 2; }
+# npm ci checks the tarball against the lockfile's integrity hash, so a changed
+# profile fails here until the lockfile is refreshed with npm install.
+npm ci --no-audit --no-fund >/dev/null 2>&1 || { echo "npm ci failed: is package-lock.json current?"; exit 2; }
 
 echo
-echo "== Proving the gate FAILS on bad code =="
+echo "== The real gate: green, red for the intended reason, green again =="
+expect_green "the gate is green as shipped"
 
-# Lint gate: the violations must trip the mapped rules.
-viol_log="$(mktemp)"
-if npx eslint src/violations >"$viol_log" 2>&1; then
-  fail "eslint unexpectedly accepted the violations"
-else
-  fired="$(grep -oE '(max-lines-per-function|complexity|sonarjs/cognitive-complexity|max-params)' "$viol_log" | sort -u | tr '\n' ' ')"
-  pass "eslint rejects violations (rules: ${fired:-none})"
-  for r in max-lines-per-function complexity sonarjs/cognitive-complexity max-params; do
-    grep -q "$r" "$viol_log" || fail "expected rule $r did not fire"
-  done
-fi
+cp "$FIXTURES/badCode.ts" src/
+expect_red "planted violations fail lint" \
+  max-lines-per-function complexity sonarjs/cognitive-complexity max-params
+rm -f src/badCode.ts
 
-# Plain JavaScript keeps no-undef, so a misspelled name is still caught.
-undefined_log="$(npx eslint src/violations/undefinedName.js 2>&1)"
-if grep -q "'amout' is not defined" <<<"$undefined_log"; then
-  pass "eslint rejects an undefined name in plain JavaScript"
-else
-  fail "eslint missed an undefined name in plain JavaScript"
-fi
+cp "$FIXTURES/undefinedName.js" src/
+expect_red "a misspelled name in plain JavaScript fails lint" "'amout' is not defined"
+rm -f src/undefinedName.js
 
-# Duplication gate.
-dup="$(mktemp -d)"; cp src/violations/*.ts "$dup/"
-if ( cd "$dup" && npx --yes "$JSCPD" . --threshold 3 --min-lines 5 --min-tokens 50 --reporters console ) >/dev/null 2>&1; then
-  fail "jscpd did not flag the duplicated block"
-else
-  pass "jscpd rejects the duplicated block (>3%)"
-fi
+write_untested_module
+expect_red "an untested JavaScript module fails on coverage" "does not meet global threshold (80%)"
+rm -f src/untested.js
 
-echo
-echo "== Proving the gate PASSES once corrected =="
+# A copied test passes lint, format, tests and coverage, so only jscpd can fail.
+cp tests/calculator.test.ts tests/copy.test.ts
+expect_red "a duplicated file fails on duplication" "too many duplicates"
+rm -f tests/copy.test.ts
 
-if npx eslint src/calculator.ts tests >/dev/null 2>&1; then
-  pass "eslint finds no issues in clean code"
-else
-  fail "eslint reported issues in clean code"; npx eslint src/calculator.ts tests
-fi
+expect_green "the gate is green again once the violations are removed"
 
-if npx eslint src/plain >/dev/null 2>&1; then
-  pass "eslint accepts CommonJS and browser JavaScript"
-else
-  fail "eslint reported issues in plain JavaScript"; npx eslint src/plain
-fi
-
-if npx prettier --check src/calculator.ts tests >/dev/null 2>&1; then
-  pass "prettier reports no changes needed"
-else
-  fail "clean code is not formatted"
-fi
-
-test_log="$(mktemp)"
-if npx vitest run --coverage >"$test_log" 2>&1; then
-  pct="$(grep -oE 'Statements +: +[0-9.]+' "$test_log" | grep -oE '[0-9.]+$')"
-  pass "tests pass and coverage gate holds (statements ${pct:-?}%)"
-else
-  fail "tests or coverage threshold failed"; grep -iE "threshold|ERROR" "$test_log" | head
-fi
-
-if npx --yes "$JSCPD" src tests >/dev/null 2>&1; then
-  pass "jscpd finds no duplication in the clean tree (<3%)"
-else
-  fail "jscpd reported duplication in the clean tree"
-fi
-
-echo
-if [ "$FAILED" -eq 0 ]; then
-  echo "==> JS/TS gate proven: fails on bad code, passes when corrected."
-  exit 0
-fi
-echo "==> JS/TS gate proof FAILED."
-exit 1
+finish "JS/TS gate"

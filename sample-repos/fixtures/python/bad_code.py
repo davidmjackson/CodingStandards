@@ -6,8 +6,8 @@ def too_many_parameters(a, b, c, d, e, f):
     return a + b + c + d + e + f
 
 
-# T1/T2/T3: oversized (>30 statements), high cyclomatic and cognitive
-# complexity -> PLR0915 / C901
+# T2/T3: high cyclomatic and cognitive
+# complexity -> C901
 def classify(n):
     result = ""
     if n > 100:
@@ -78,3 +78,40 @@ def duplicate_b(xs):
         if count < 0:
             count = 0
     return total + count
+
+
+# T1: over 30 statements -> PLR0915
+def too_many_statements():
+    total = 0
+    total += 1
+    total += 2
+    total += 3
+    total += 4
+    total += 5
+    total += 6
+    total += 7
+    total += 8
+    total += 9
+    total += 10
+    total += 11
+    total += 12
+    total += 13
+    total += 14
+    total += 15
+    total += 16
+    total += 17
+    total += 18
+    total += 19
+    total += 20
+    total += 21
+    total += 22
+    total += 23
+    total += 24
+    total += 25
+    total += 26
+    total += 27
+    total += 28
+    total += 29
+    total += 30
+    total += 31
+    return total
