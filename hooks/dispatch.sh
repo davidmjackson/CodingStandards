@@ -85,7 +85,7 @@ lint_js() {
 lint_python() {
   local file="$1"
   require ruff || return 1
-  ruff format "$file" && ruff check "$file"
+  ruff format "$file" && ruff check --output-format=concise "$file"
 }
 
 edited_file() {
@@ -186,11 +186,64 @@ check_python_tests() {
 gate_python() {
   log "Python: ruff + tests + coverage + module length"
   if require ruff; then
-    check "Ruff check" ruff check .
+    check "Ruff check" ruff check --output-format=concise .
     check "Ruff format" ruff format --check .
   fi
   check_python_tests
   check_module_length
+}
+
+# Exit code the pyproject probe uses for "no tool.ruff table". Python exits 1 on an
+# uncaught exception, so absence needs a code nothing else produces.
+NO_RUFF_TABLE=10
+
+# Ruff's three config forms. Exit 0: configured, 1: not, 2: cannot tell.
+ruff_config() {
+  { [ -f .ruff.toml ] || [ -f ruff.toml ]; } && return 0
+  [ -f pyproject.toml ] || return 1
+  require python3 || return 2
+  python3 -c 'import sys
+try:
+    import tomllib
+    with open("pyproject.toml", "rb") as f:
+        tool = tomllib.load(f).get("tool", {})
+except (ImportError, OSError, ValueError) as error:
+    sys.exit(f"[quality] pyproject.toml cannot be read: {error}")
+if not isinstance(tool, dict):
+    sys.exit("[quality] pyproject.toml: tool is not a table.")
+sys.exit(0 if "ruff" in tool else int(sys.argv[1]))' "$NO_RUFF_TABLE"
+  case $? in
+    0) return 0 ;;
+    "$NO_RUFF_TABLE") return 1 ;;
+    *) return 2 ;;
+  esac
+}
+
+# True when the project is Python. Python files without a Ruff config are red,
+# never a skipped stack, and so is any config that cannot be read.
+python_stack() {
+  ruff_config
+  case $? in
+    0) gate_python; return 0 ;;
+    1) ;;
+    *) log "cannot tell whether Ruff is configured."; GATE_FAILED=1; return 0 ;;
+  esac
+  [ -n "$(python_modules | head -1)" ] || return 1
+  log "Python files found but no Ruff config: add .ruff.toml, ruff.toml or [tool.ruff]."
+  GATE_FAILED=1
+}
+
+# Runs every detected stack's gate. A project with none of them is red: a gate
+# that checked nothing must not report green.
+run_stack_gates() {
+  local found=0
+  has_csharp && { gate_csharp; found=1; }
+  [ -f package.json ] && { gate_js; found=1; }
+  python_stack && found=1
+  [ -f package.json ] || gate_duplication
+  [ "$found" -eq 1 ] && return 0
+  log "No supported stack found: no .csproj, .sln, package.json, Ruff config or .py files."
+  GATE_FAILED=1
 }
 
 gate_duplication() {
@@ -220,10 +273,7 @@ run_full_gate() {
   cd "$ROOT" || block_stop "cannot enter $ROOT"
 
   check_claude_md_budget
-  has_csharp && gate_csharp
-  [ -f package.json ] && gate_js
-  { [ -f ruff.toml ] || [ -f pyproject.toml ]; } && gate_python
-  [ -f package.json ] || gate_duplication
+  run_stack_gates
 
   if [ "$GATE_FAILED" -eq 0 ]; then
     log "Full gate green."
