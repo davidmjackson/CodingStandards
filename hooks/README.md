@@ -29,7 +29,7 @@ hook script and **one** settings entry per event — never one hook per language
 |---|---|
 | C# | build + analyzers + tests; coverage comes from the project's coverlet threshold |
 | JS/TS | `npm run verify`, which owns tests, coverage and duplication; red if the script is missing |
-| Python | Ruff check + format, tests under `coverage` (pytest if installed, else unittest), 80% coverage, 400-line modules |
+| Python (`.ruff.toml`, `ruff.toml` or `[tool.ruff]` in `pyproject.toml`) | Ruff check + format, tests under `coverage` (pytest if installed, else unittest), 80% coverage, 400-line modules |
 | Without `package.json` | jscpd duplication |
 
 ## How it fails
@@ -39,6 +39,8 @@ hook script and **one** settings entry per event — never one hook per language
   A red Stop also writes to stdout, because exit 2 with empty stdout and a missing-file
   message on stderr does not block.
 - **Unreadable hook input is a failure.** An event with no edited file is ignored.
+- **A stack that cannot be gated is a failure.** `.py` files with no Ruff config are red,
+  and so is a project where no supported stack is found at all.
 - **A missing required tool is a failure**, never a skip. A project `.venv/bin` is
   added to `PATH` first. A `.cs` file with no `.csproj` above it is left alone.
 - **A second red Stop exits 1.** This is an escape hatch: it prevents an endless loop,

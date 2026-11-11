@@ -4,9 +4,5 @@
   "minTokens": 50,
   "gitignore": true,
   "reporters": ["console"],
-  "ignore": [
-    "**/.venv/**",
-    "**/__pycache__/**",
-    "**/violations/**"
-  ]
+  "ignore": ["**/.venv/**", "**/__pycache__/**"]
 }

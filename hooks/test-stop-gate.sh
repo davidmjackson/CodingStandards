@@ -121,6 +121,58 @@ expect_status 0 "a virtualenv is not measured"
 p="$(python_project)"; mkdir -p "$p/.venv/bin"; mv "$p/.stubs/ruff" "$p/.venv/bin/ruff"; run "$p" stop
 expect_status 0 "tools in the project .venv are found"
 
+echo "== Stop: every Ruff config form is detected, and no stack is red =="
+# A failing ruff stub proves the Python gate ran: the exit is 2 only if it did.
+ruff_red_project() {
+  local project; project="$(new_project)"
+  for tool in coverage pytest npx; do stub "$project" "$tool" 0; done
+  stub "$project" ruff 1
+  echo "$project"
+}
+
+p="$(ruff_red_project)"; : > "$p/.ruff.toml"; run "$p" stop
+expect_status 2 ".ruff.toml runs the Python gate"
+
+p="$(ruff_red_project)"; printf '[tool.ruff.lint]\nselect = ["E"]\n' > "$p/pyproject.toml"; run "$p" stop
+expect_status 2 "a pyproject.toml with only [tool.ruff.lint] runs the Python gate"
+
+p="$(ruff_red_project)"; printf '[project]\nname = "x"\n' > "$p/pyproject.toml"; : > "$p/app.py"; run "$p" stop
+expect_status 2 "a pyproject.toml without tool.ruff is not a Ruff config"
+expect_output "no Ruff config" "says the Ruff config is missing"
+
+p="$(ruff_red_project)"; : > "$p/app.py"; run "$p" stop
+expect_status 2 "Python files with no Ruff config block"
+expect_no_output "Full gate green" "does not claim green without a Ruff config"
+
+p="$(ruff_red_project)"; printf '[tool.ruff\n' > "$p/pyproject.toml"; run "$p" stop
+expect_status 2 "an unreadable pyproject.toml blocks"
+expect_output "pyproject.toml" "names the unreadable file"
+
+# Mixed stacks: a green JS gate must not hide a Python detection error.
+js_project() {
+  local project; project="$(new_project)"
+  echo '{"scripts":{"verify":"x"}}' > "$project/package.json"
+  stub "$project" npm 0; stub "$project" npx 0
+  echo "$project"
+}
+
+p="$(js_project)"; printf 'tool = 1\n' > "$p/pyproject.toml"; run "$p" stop
+expect_status 2 "a pyproject.toml whose tool is not a table blocks"
+expect_no_output "Full gate green" "does not claim green after a detection error"
+
+p="$(js_project)"; printf '[tool.ruff\n' > "$p/pyproject.toml"; run "$p" stop
+expect_status 2 "an unreadable pyproject.toml blocks beside a green JS gate"
+
+p="$(js_project)"; printf '[project]\nname = "x"\n' > "$p/pyproject.toml"; run "$p" stop
+expect_status 0 "a pyproject.toml without tool.ruff and no .py files leaves JS green"
+
+p="$(new_project)"; stub "$p" npx 0; run "$p" stop
+expect_status 2 "a project with no supported stack blocks"
+expect_output "No supported stack" "says no stack was found"
+
+p="$(new_project)"; stub "$p" npx 0; mkdir -p "$p/.venv/lib"; : > "$p/.venv/lib/dep.py"; run "$p" stop
+expect_output "No supported stack" "a virtualenv's .py files are not the project's"
+
 echo "== Stop: JS/TS delegates to the repo's verify command =="
 p="$(new_project)"; echo '{"scripts":{"verify":"x"}}' > "$p/package.json"
 stub "$p" npm 0; stub "$p" npx 0; run "$p" stop

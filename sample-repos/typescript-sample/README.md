@@ -15,15 +15,16 @@ export { default } from '@codequalitystandards/eslint-config/prettier';
 
 ## Layout
 
-| Path                                       | Purpose                                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `src/calculator.ts`                        | Clean code. Passes every gate.                                                                       |
-| `src/violations/badCode.ts`                | Deliberately bad — oversized function, high complexity, too many parameters, and a duplicated block. |
-| `tests/`                                   | vitest tests + v8 coverage gate (80%).                                                               |
-| `eslint.config.js` / `prettier.config.mjs` | Re-export the shared profile — nothing defined locally.                                              |
-| `vitest.config.ts`                         | Coverage thresholds.                                                                                 |
-| `.jscpd.json`                              | Duplication config (3% threshold).                                                                   |
-| `prove-gate.sh`                            | Packs the config as a tarball, installs it, runs the whole acceptance test.                          |
+| Path                                       | Purpose                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `src/calculator.ts`                        | Clean code. Passes every gate.                                                                         |
+| `tests/`                                   | vitest tests + v8 coverage gate (80%).                                                                 |
+| `eslint.config.js` / `prettier.config.mjs` | Re-export the shared profile — nothing defined locally.                                                |
+| `vitest.config.ts`                         | Coverage thresholds.                                                                                   |
+| `.jscpd.json`                              | Duplication config (3% threshold).                                                                     |
+| `prove-gate.sh`                            | Packs the config as a tarball, installs it with `npm ci`, runs the whole acceptance test.              |
+| `src/plain/`                               | CommonJS and browser JavaScript, tested and counted in coverage.                                       |
+| `../fixtures/typescript/`                  | Deliberately bad code, kept outside the sample so its gate stays green. The proof plants it in `src/`. |
 
 ## Run it
 
@@ -31,12 +32,14 @@ export { default } from '@codequalitystandards/eslint-config/prettier';
 ./prove-gate.sh
 ```
 
-It proves:
+It runs the sample's real gate, `npm run verify`, and proves:
 
-1. **Gate fails on bad code** — eslint reports `max-lines-per-function` (T1),
-   `complexity` (T2), `sonarjs/cognitive-complexity` (T3), and `max-params`
-   (T4); jscpd flags the duplicated block.
-2. **Gate passes once corrected** — eslint and prettier are clean, tests pass
-   at 100% coverage (≥ 80%), and jscpd finds no duplication.
+1. **Green as shipped.**
+2. **Red for the intended reason** — with the bad fixtures planted in `src/`,
+   eslint reports `max-lines-per-function` (T1), `complexity` (T2),
+   `sonarjs/cognitive-complexity` (T3), `max-params` (T4) and an undefined name in
+   plain JavaScript. An untested JavaScript module fails the coverage threshold (T7), and a copied
+   file fails jscpd (T6).
+3. **Green again** once the fixtures are removed.
 
 Every rule maps to a threshold in [`/core/THRESHOLDS.md`](../../core/THRESHOLDS.md).
